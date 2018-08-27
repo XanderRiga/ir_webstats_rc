@@ -6,7 +6,10 @@ from ir_webstats_rc.util import clean
 
 irw = iRWebStats()
 irw.login('rob.crouch@gmail.com', 'cYFVPo%^Gs03')
+if not irw.logged:
+    print (
+        "Couldn't log in to iRacing Membersite. Please check your credentials")
+    exit()
 
-if irw.logged:
-    print(irw.current_series_images())
-
+print(irw.event_results(23743409))
+    
