@@ -33,7 +33,7 @@ def __logged_in(func, *args, **kw):
                 operation couldn't be completed.", irweb.verbose)
         return None
 
-    if 'custid' in inspect.getargspec(func).args:
+    if 'custid' in inspect.getfullargspec(func).args:
         args2[1] = args2[1] if args2[1] is not None else irweb.custid
 
     return func(*args2, **kw)
