@@ -16,19 +16,15 @@ LIC_C = 3
 LIC_B = 4
 LIC_A = 5
 LIC_PRO = 6
-LIC_PRO_WC  = 7
-
-
+LIC_PRO_WC = 7
 
 SORT_IRATING = 'irating'
 SORT_TIME = 'start_time'
 SORT_POINTS = 'points'
-ORDER_DESC  = 'desc'
+ORDER_DESC = 'desc'
 ORDER_ASC = 'asc'
 
-
-
-#OTHER
+# OTHER
 EVENT_RACE = 1
 EVENT_QUALY = 2
 EVENT_PRACTICE = 3
@@ -37,9 +33,8 @@ EVENT_TTRIAL = 4
 EVENT_OFFICIAL = 6
 EVENT_UNOFFICIAL = 7
 
-
-#INCIDENT FLAGS
-#these are used in the laps data
+# INCIDENT FLAGS
+# these are used in the laps data
 FLAG_PITTED = 2
 FLAG_OFF_TRACK = 4
 FLAG_BLACK_FLAG = 8
@@ -67,7 +62,7 @@ INC_FLAGS = {
     2048: "tow"
 }
 
-#URLS
+# URLS
 URL_IRACING_LOGIN = 'https://members.iracing.com/membersite/login.jsp'
 URL_IRACING_LOGIN2 = 'https://members.iracing.com/membersite/Login'
 URL_IRACING_HOME = 'https://members.iracing.com/membersite/member/Home.do'
@@ -86,27 +81,28 @@ URL_SEASON_STANDINGS = 'https://members.iracing.com/memberstats/member/GetSeason
 URL_SEASON_STANDINGS2 = 'https://members.iracing.com/membersite/member/statsseries.jsp'
 URL_HOSTED_RESULTS = 'https://members.iracing.com/memberstats/member/GetPrivateSessionResults'
 URL_SELECT_SERIES = 'https://members.iracing.com/membersite/member/SelectSeries.do?&season=%s&view=undefined&nocache=%s'
-URL_SESSION_TIMES = 'https://members.iracing.com/membersite/member/GetSessionTimes'#T-m-d
+URL_SESSION_TIMES = 'https://members.iracing.com/membersite/member/GetSessionTimes'  # T-m-d
 URL_SERIES_RACERESULTS = 'https://members.iracing.com/memberstats/member/GetSeriesRaceResults'
 
-URL_GET_EVENTRESULTS = 'https://members.iracing.com/membersite/member/GetEventResultsAsCSV?subsessionid=%s&simsesnum=%s&includeSummary=1' #simsesnum 0 race, -1 qualy or practice, -2 practice
+URL_GET_EVENTRESULTS = 'https://members.iracing.com/membersite/member/GetEventResultsAsCSV?subsessionid=%s&simsesnum=%s&includeSummary=1'  # simsesnum 0 race, -1 qualy or practice, -2 practice
 
 URL_GET_LAPS_SINGLE = 'https://members.iracing.com/membersite/member/GetLaps?&subsessionid=%s&groupid=%s&simsessnum=%s'
 URL_GET_LAPS_ALL = 'https://members.iracing.com/membersite/member/GetLapChart?&subsessionid=%s&carclassid=-1'
 
 URL_GET_PASTSERIES = 'https://members.iracing.com/membersite/member/PreviousSeasons.do'
 
-URL_GET_WORLDRECORD = 'https://members.iracing.com/memberstats/member/GetWorldRecords?seasonyear=%s&seasonquarter=%s&carid=%s&trackid=%s&custid=%s&format=json&upperbound=1'
+URL_GET_WORLDRECORD = 'https://members.iracing.com/memberstats/member/GetWorldRecords?seasonyear=%s&seasonquarter=%s' \
+                      '&carid=%s&trackid=%s&custid=%s&format=json&upperbound=1 '
 
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.52 '
+                  'Safari/537.17 '
+    , 'Referer': 'https://members.iracing.com/membersite/login.jsp', 'Connection': 'keep-alive',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3', 'Cache-Control': 'max-age=0', 'Host': 'members.iracing.com',
+    'Accept-Encoding': 'gzip,deflate,sdch', 'Origin': 'members.iracing.com', 'Accept-Language': 'en-US,en;q=0.8'}
 
-HEADERS = { 'User-Agent' : 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.52 Safari/537.17'
-        , 'Referer': 'https://members.iracing.com/membersite/login.jsp', 'Connection': 'keep-alive',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8','Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3','Cache-Control': 'max-age=0', 'Host': 'members.iracing.com','Accept-Encoding': 'gzip,deflate,sdch', 'Origin': 'members.iracing.com', 'Accept-Language': 'en-US,en;q=0.8'}
-
-
-
-
-#LOCATIONS
+# LOCATIONS
 LOC_ALL = 'null'
 LOC_AFGHANISTAN = 'AF'
 LOC_ALAND_ISLANDS = 'AX'

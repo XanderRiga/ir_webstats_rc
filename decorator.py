@@ -188,7 +188,8 @@ class FunctionMaker(object):
         ibody = '\n'.join('    ' + line for line in body.splitlines())
         return self.make('def %(name)s(%(signature)s):\n' + ibody, 
                         evaldict, addsource, **attrs)
-  
+
+
 def decorator(caller, func=None):
     """
     decorator(caller) converts a caller function into a decorator;

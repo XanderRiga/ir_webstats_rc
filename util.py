@@ -1,7 +1,7 @@
 import inspect
 import json
 
-from ir_webstats_rc import decorator
+from .decorator import decorator
 
 try:
     from urllib.parse import unquote  # python3
@@ -40,7 +40,7 @@ def __logged_in(func, *args, **kw):
 
 
 def logged_in(func):
-    return decorator.decorator(__logged_in, func)
+    return decorator(__logged_in, func)
 
 
 def pprint(string, v=True):
