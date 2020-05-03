@@ -5,6 +5,7 @@ class LastRacesStats:
         self.finishPos = dict['finishPos']
         self.incidents = dict['incidents']
         self.trackName = dict['trackName']
+        self.strengthOfField = dict['sof']
         self.date = dict['date']
         self.time = dict['time']
         self.winnerName = dict['winnerName']
