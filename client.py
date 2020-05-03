@@ -552,7 +552,7 @@ class iRWebStats:
         """ Gets career stats (top5, top 10, etc.) of driver (custid)."""
         r = self.__req(URL_CAREER_STATS % (custid),
                        cookie=self.last_cookie)
-        return parse(r)[0]
+        return parse(r)
 
     @logged_in
     def yearly_stats(self, custid=None):
