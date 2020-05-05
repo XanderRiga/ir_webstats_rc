@@ -11,6 +11,7 @@ class LastRacesStats:
             .replace('%C3%BC', 'u')
         self.strengthOfField = dict['sof']
         self.date = dict['date']
+        self.seriesID = dict['seriesID']
         self.time = dict['time']
         self.winnerName = dict['winnerName']
         self.winnerID = dict['winnerID']

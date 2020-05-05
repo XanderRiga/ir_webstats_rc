@@ -17,8 +17,7 @@ import re
 import ast
 
 from .util import *
-# from .constants import constants as ct
-
+from .responses.series import Series
 # _*_ coding: utf_8 _*_
 
 ALL = -1
@@ -739,11 +738,14 @@ class iRWebStats:
 
     @logged_in
     def all_seasons(self):
-        """ Get All season data available at Series Stats page
-        """
+        """ Get All season data available at Series Stats page"""
         pprint("Getting iRacing Seasons with Stats")
         resp = self.__req(URL_SEASON_STANDINGS2)
-        return self._load_irservice_var("SeasonListing", resp)
+        seasons_dict_list = self._load_irservice_var("SeasonListing", resp)
+        if not seasons_dict_list:
+            return []
+
+        return list(map(lambda x: Series(x), seasons_dict_list))
 
     @logged_in
     def season_standings(self, season, carclass, club=ALL, raceweek=ALL,
