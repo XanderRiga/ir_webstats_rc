@@ -9,7 +9,7 @@ class LastRacesStats:
             .replace('%5B', '(')\
             .replace('%5D', ')')\
             .replace('%C3%BC', 'u')
-        self.strengthOfField = dict['sof']
+        self.sof = dict['sof']
         self.date = dict['date']
         self.seriesID = dict['seriesID']
         self.time = dict['time']
