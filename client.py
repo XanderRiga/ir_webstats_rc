@@ -26,6 +26,8 @@ WAIT_TIME = 0.3  # Minimum time in seconds between two consecutive requests to i
 
 IRATING_OVAL_CHART = 1
 IRATING_ROAD_CHART = 2
+IRATING_DIRT_OVAL_CHART = 3
+IRATING_DIRT_ROAD_CHART = 4
 
 RACE_TYPE_OVAL = 1
 RACE_TYPE_ROAD = 2
