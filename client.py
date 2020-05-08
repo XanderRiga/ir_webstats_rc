@@ -19,6 +19,9 @@ import ast
 from .util import *
 from .responses.series import Series
 from .constants import *
+from .responses.last_races_stats import LastRacesStats
+from .responses.career_stats import CareerStats
+from .responses.yearly_stats import YearlyStats
 
 
 class iRWebStats:
@@ -200,15 +203,22 @@ class iRWebStats:
         """ Gets career stats (top5, top 10, etc.) of driver (custid)."""
         r = self.__req(URL_CAREER_STATS % (custid),
                        cookie=self.last_cookie)
-        return parse(r)
+        career_stats_dict = parse(r)
+        if not career_stats_dict:
+            return []
+
+        return map(lambda x: CareerStats(x), career_stats_dict)
 
     @logged_in
     def yearly_stats(self, custid=None):
         """ Gets yearly stats (top5, top 10, etc.) of driver (custid)."""
         r = self.__req(URL_YEARLY_STATS % (custid),
                        cookie=self.last_cookie)
-        # tofile(r)
-        return parse(r)
+        yearly_stats_dict = parse(r)
+        if not yearly_stats_dict:
+            return []
+
+        return map(lambda x: YearlyStats(x), yearly_stats_dict)
 
     @logged_in
     def cars_driven(self, custid=None):
@@ -241,7 +251,11 @@ class iRWebStats:
         """ Gets stats of last races (10 max?) of driver (custid)."""
         r = self.__req(URL_LASTRACE_STATS % (custid),
                        cookie=self.last_cookie)
-        return parse(r)
+        lastrace_dict = parse(r)
+        if not lastrace_dict:
+            return []
+
+        return map(lambda x: LastRacesStats(x), lastrace_dict)
 
     @logged_in
     def driver_search(self, race_type=RACE_TYPE_ROAD, location=LOC_ALL,
