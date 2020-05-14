@@ -6,10 +6,11 @@ __version__ = "1.3"
 
 import urllib
 import urllib.parse
+
 encode = urllib.parse.urlencode
 from io import StringIO
 
-import requests
+import requests_async as requests
 import datetime
 import csv
 import time
@@ -25,7 +26,6 @@ from .responses.yearly_stats import YearlyStats
 
 
 class iRWebStats:
-
     """ Use this class to connect to iRacing website and request some stats
         from drivers, races and series. It needs to be logged in the
         iRacing membersite so valid login crendentials (user, password)
@@ -37,8 +37,8 @@ class iRWebStats:
         self.logged = False
         self.custid = 0
         self.verbose = verbose
-        self.TRACKS, self.CARS, self.DIVISION, self.CARCLASS, self.CLUB = {},\
-            {}, {}, {}, {}
+        self.TRACKS, self.CARS, self.DIVISION, self.CARCLASS, self.CLUB = {}, \
+                                                                          {}, {}, {}, {}
 
     def __save_cookie(self):
         """ Saves the current cookie to disk from a successful login to avoid
@@ -61,7 +61,7 @@ class iRWebStats:
         except:
             return False
 
-    def login(self, username='', password='', get_info=False):
+    async def login(self, username='', password='', get_info=False):
         """ Log in to iRacing members site. If there is a valid cookie saved
             then it tries to use it to avoid a new login request. Returns
             True is the login was succesful and stores the customer id
@@ -74,14 +74,14 @@ class iRWebStats:
         try:
             pprint("Loggin in...", self.verbose)
             # Check if there's a previous cookie
-            if (self.__load_cookie() and self.__check_cookie()):
+            if self.__load_cookie() and await self.__check_cookie():
                 #  If previous cookie is valid
                 pprint("Previous cookie valid", self.verbose)
                 self.logged = True
                 if get_info:
-                  # Load iracing info
-                  self.__get_irservice_info(self.__req(URL_IRACING_HOME,
-                                                       cookie=self.last_cookie))
+                    # Load iracing info
+                    self.__get_irservice_info(await self.__req(URL_IRACING_HOME,
+                                                         cookie=self.last_cookie))
                 # TODO Should we cache this?
                 return self.logged
             self.custid = ''
@@ -111,16 +111,16 @@ class iRWebStats:
     def logout(self):
         self.logged = False  # TODO proper logout
 
-    def __check_cookie(self):
+    async def __check_cookie(self):
         """ Checks the cookie by testing a request response"""
 
-        r = parse(self.__req(URL_DRIVER_COUNTS, cookie=self.last_cookie))
+        r = parse(await self.__req(URL_DRIVER_COUNTS, cookie=self.last_cookie))
         if isinstance(r, dict):
             return True
         return False
 
-    def __req(self, url, data=None, cookie=None, grab_cookie=False,
-              useget=False):
+    async def __req(self, url, data=None, cookie=None, grab_cookie=False,
+                    useget=False):
         """ Creates and sends the HTTP requests to iRacing site """
 
         # Sleep/wait to avoid flooding the service with requests
@@ -132,11 +132,11 @@ class iRWebStats:
             h['Cookie'] = self.last_cookie
 
         if (data is None) or useget:
-            resp = requests.get(url, headers=h, params=data)
+            resp = await requests.get(url, headers=h, params=data)
         else:
             h['Content-Type'] = 'application/x-www-form-urlencoded;\
                     charset=UTF-8'
-            resp = requests.post(url, data=data, headers=h)
+            resp = await requests.post(url, data=data, headers=h)
         if 'Set-Cookie' in resp.headers and grab_cookie:
             self.last_cookie = resp.headers['Set-Cookie']
             # Must get irsso_members from another header
@@ -153,15 +153,15 @@ class iRWebStats:
 
         pprint("Getting iRacing Service info (cars, tracks, etc.)",
                self.verbose)
-        items = {"TRACKS":  "TrackListing", "CARS": "CarListing",
-                 "CARCLASS":  "CarClassListing", "CLUBS": "ClubListing",
+        items = {"TRACKS": "TrackListing", "CARS": "CarListing",
+                 "CARCLASS": "CarClassListing", "CLUBS": "ClubListing",
                  "SEASON": "SeasonListing", "DIVISION": "DivisionListing",
                  "YEARANDQUARTER": "YearAndQuarterListing"}
         for i in items:
             str2find = "var " + items[i] + " = extractJSON('"
             try:
                 ind1 = resp.index(str2find)
-                json_o = resp[ind1 + len(str2find): resp.index("');", ind1)]\
+                json_o = resp[ind1 + len(str2find): resp.index("');", ind1)] \
                     .replace('+', ' ')
                 o = json.loads(json_o)
                 if i not in ("SEASON", "YEARANDQUARTER"):
@@ -175,8 +175,8 @@ class iRWebStats:
         str2find = "var " + varname + " = extractJSON('"
         ind1 = -1
         for _ in range(appear):
-            ind1 = resp.index(str2find, ind1+1)
-        json_o = resp[ind1 + len(str2find): resp.index("');", ind1)]\
+            ind1 = resp.index(str2find, ind1 + 1)
+        json_o = resp[ind1 + len(str2find): resp.index("');", ind1)] \
             .replace('+', ' ')
         o = json.loads(json_o)
         if varname not in ("SeasonListing", "YEARANDQUARTER"):
@@ -188,21 +188,21 @@ class iRWebStats:
         """ Gets the irating data of a driver using its custom id (custid)
             that generates the chart located in the driver's profile. """
 
-        r = self.__req(URL_STATS_CHART % (custid, category),
-                       cookie=self.last_cookie)
+        r = await self.__req(URL_STATS_CHART % (custid, category),
+                             cookie=self.last_cookie)
         return parse(r)
 
     @logged_in
-    def driver_counts(self):
+    async def driver_counts(self):
         """ Gets list of connected myracers and notifications. """
-        r = self.__req(URL_DRIVER_COUNTS, cookie=self.last_cookie)
+        r = await self.__req(URL_DRIVER_COUNTS, cookie=self.last_cookie)
         return parse(r)
 
     @logged_in
     async def career_stats(self, custid=None):
         """ Gets career stats (top5, top 10, etc.) of driver (custid)."""
-        r = self.__req(URL_CAREER_STATS % (custid),
-                       cookie=self.last_cookie)
+        r = await self.__req(URL_CAREER_STATS % (custid),
+                             cookie=self.last_cookie)
         career_stats_dict = parse(r)
         if not career_stats_dict:
             return []
@@ -212,8 +212,8 @@ class iRWebStats:
     @logged_in
     async def yearly_stats(self, custid=None):
         """ Gets yearly stats (top5, top 10, etc.) of driver (custid)."""
-        r = self.__req(URL_YEARLY_STATS % (custid),
-                       cookie=self.last_cookie)
+        r = await self.__req(URL_YEARLY_STATS % (custid),
+                             cookie=self.last_cookie)
         yearly_stats_dict = parse(r)
         if not yearly_stats_dict:
             return []
@@ -221,27 +221,27 @@ class iRWebStats:
         return map(lambda x: YearlyStats(x), yearly_stats_dict)
 
     @logged_in
-    def cars_driven(self, custid=None):
+    async def cars_driven(self, custid=None):
         """ Gets list of cars driven by driver (custid)."""
-        r = self.__req(URL_CARS_DRIVEN % (custid),
-                       cookie=self.last_cookie)
+        r = await self.__req(URL_CARS_DRIVEN % (custid),
+                             cookie=self.last_cookie)
         # tofile(r)
         return parse(r)
 
     @logged_in
-    def personal_best(self, custid=None, carid=0):
+    async def personal_best(self, custid=None, carid=0):
         """ Personal best times of driver (custid) using car
             (carid. check self.CARS) set in official events."""
-        r = self.__req(URL_PERSONAL_BEST % (carid, custid),
-                       cookie=self.last_cookie)
+        r = await self.__req(URL_PERSONAL_BEST % (carid, custid),
+                             cookie=self.last_cookie)
         return parse(r)
 
     @logged_in
-    def driverdata(self, drivername):
+    async def driverdata(self, drivername):
         """ Personal data of driver  using its name in the request
             (i.e drivername="Victor Beltran"). """
 
-        r = self.__req(URL_DRIVER_STATUS % (encode({
+        r = await self.__req(URL_DRIVER_STATUS % (encode({
             'searchTerms': drivername})), cookie=self.last_cookie)
         # tofile(r)
         return parse(r)
@@ -249,8 +249,8 @@ class iRWebStats:
     @logged_in
     async def lastrace_stats(self, custid=None):
         """ Gets stats of last races (10 max?) of driver (custid)."""
-        r = self.__req(URL_LASTRACE_STATS % (custid),
-                       cookie=self.last_cookie)
+        r = await self.__req(URL_LASTRACE_STATS % (custid),
+                             cookie=self.last_cookie)
         lastrace_dict = parse(r)
         if not lastrace_dict:
             return []
@@ -258,12 +258,12 @@ class iRWebStats:
         return map(lambda x: LastRacesStats(x), lastrace_dict)
 
     @logged_in
-    def driver_search(self, race_type=RACE_TYPE_ROAD, location=LOC_ALL,
-                      license=(LIC_ROOKIE, ALL), irating=(0, ALL),
-                      ttrating=(0, ALL), avg_start=(0, ALL),
-                      avg_finish=(0, ALL), avg_points=(0, ALL),
-                      avg_incs=(0, ALL), active=False,
-                      sort=SORT_IRATING, page=1, order=ORDER_DESC):
+    async def driver_search(self, race_type=RACE_TYPE_ROAD, location=LOC_ALL,
+                            license=(LIC_ROOKIE, ALL), irating=(0, ALL),
+                            ttrating=(0, ALL), avg_start=(0, ALL),
+                            avg_finish=(0, ALL), avg_points=(0, ALL),
+                            avg_incs=(0, ALL), active=False,
+                            sort=SORT_IRATING, page=1, order=ORDER_DESC):
         """Search drivers using several search fields. A tuple represent a
            range (i.e irating=(1000, 2000) gets drivers with irating
            between 1000 and 2000). Use ALL used in the lower or
@@ -290,15 +290,15 @@ class iRWebStats:
                 'avgstarthigh': avg_start[1], 'avgfinishlow': avg_finish[0],
                 'avgfinishhigh': avg_finish[1], 'avgpointslow': avg_points[0],
                 'avgpointshigh': avg_points[1], 'avgincidentslow':
-                avg_incs[0], 'avgincidentshigh': avg_incs[1],
+                    avg_incs[0], 'avgincidentshigh': avg_incs[1],
                 'lowerbound': lowerbound, 'upperbound': upperbound,
                 'sort': sort, 'order': order, 'active': active}
 
         total_results, drivers = 0, {}
 
         try:
-            r = self.__req(URL_DRIVER_STATS, data=data,
-                           cookie=self.last_cookie)
+            r = await self.__req(URL_DRIVER_STATS, data=data,
+                                 cookie=self.last_cookie)
             res = parse(r)
             total_results = res['d'][list(res['m'].keys())[list(res['m'].values()).index('rowcount')]]
             custid_id = list(res['m'].keys())[list(res['m'].values()).index('rowcount')]
@@ -320,12 +320,12 @@ class iRWebStats:
         return a, b, c
 
     @logged_in
-    def results_archive(self, custid=None, race_type=RACE_TYPE_ROAD,
+    async def results_archive(self, custid=None, race_type=RACE_TYPE_ROAD,
                         event_types=ALL, official=ALL,
                         license_level=ALL, car=ALL, track=ALL,
                         series=ALL, season=(2016, 3, ALL),
                         date_range=ALL, page=1, sort=SORT_TIME,
-                        order= ORDER_DESC):
+                        order=ORDER_DESC):
         """ Search race results using various fields. Returns a tuple
             (results, total_results) so if you want all results you should
             request different pages (using page). Each page has 25
@@ -370,7 +370,7 @@ class iRWebStats:
                 data['raceweek'] = season[2]
         else:
             # Date range
-            tc = lambda s:\
+            tc = lambda s: \
                 time.mktime(datetime.datetime.strptime(s, "%Y-%m-%d").
                             timetuple()) * 1000
             data['starttime_low'] = tc(date_range[0])  # multiplied by 1000
@@ -387,7 +387,7 @@ class iRWebStats:
                              LIC_D, LIC_PRO, LIC_PRO_WC)
         for v in license_level:
             data[lic_vars[v]] = 1
-        r = self.__req(URL_RESULTS_ARCHIVE, data=data,
+        r = await self.__req(URL_RESULTS_ARCHIVE, data=data,
                        cookie=self.last_cookie)
         res = parse(r)
         total_results = res['d'][list(res['m'].keys())[list(res['m'].values()).index('rowcount')]]
@@ -400,10 +400,10 @@ class iRWebStats:
         return results, total_results
 
     @logged_in
-    def all_seasons(self):
+    async def all_seasons(self):
         """ Get All season data available at Series Stats page"""
         pprint("Getting iRacing Seasons with Stats")
-        resp = self.__req(URL_SEASON_STANDINGS2)
+        resp = await self.__req(URL_SEASON_STANDINGS2)
         seasons_dict_list = self._load_irservice_var("SeasonListing", resp)
         if not seasons_dict_list:
             return []
@@ -411,7 +411,7 @@ class iRWebStats:
         return list(map(lambda x: Series(x), seasons_dict_list))
 
     @logged_in
-    def season_standings(self, season, carclass, club=ALL, raceweek=ALL,
+    async def season_standings(self, season, carclass, club=ALL, raceweek=ALL,
                          division=ALL, sort=SORT_POINTS,
                          order=ORDER_DESC, page=1):
         """ Search season standings using various fields. season, carclass
@@ -426,7 +426,7 @@ class iRWebStats:
         data = {'sort': sort, 'order': order, 'seasonid': season,
                 'carclassid': carclass, 'clubid': club, 'raceweek': raceweek,
                 'division': division, 'start': lowerbound, 'end': upperbound}
-        r = self.__req(URL_SEASON_STANDINGS, data=data)
+        r = await self.__req(URL_SEASON_STANDINGS, data=data)
         res = parse(r)
         total_results = res['d'][list(res['m'].keys())[list(res['m'].values()).index('rowcount')]]
         results = res['d']['r']
@@ -436,7 +436,7 @@ class iRWebStats:
         return results, total_results
 
     @logged_in
-    def hosted_results(self, session_host=None, session_name=None,
+    async def hosted_results(self, session_host=None, session_name=None,
                        date_range=None, sort=SORT_TIME,
                        order=ORDER_DESC, page=1):
         """ Search hosted races results using various fields. Returns a tuple
@@ -456,14 +456,14 @@ class iRWebStats:
 
         if date_range is not None:
             # Date range
-            tc = lambda s:\
+            tc = lambda s: \
                 time.mktime(datetime.datetime.strptime(s, "%Y-%m-%d").
                             timetuple()) * 1000
             data['starttime_lowerbound'] = tc(date_range[0])
             # multiplied by 1000
             data['starttime_upperbound'] = tc(date_range[1])
 
-        r = self.__req(URL_HOSTED_RESULTS, data=data)
+        r = await self.__req(URL_HOSTED_RESULTS, data=data)
         # tofile(r)
         res = parse(r)
         total_results = res['rowcount']
@@ -471,19 +471,19 @@ class iRWebStats:
         return results, total_results
 
     @logged_in
-    def session_times(self, series_season, start, end):
+    async def session_times(self, series_season, start, end):
         """ Gets Current and future sessions (qualy, practice, race)
             of series_season """
-        r = self.__req(URL_SESSION_TIMES, data={'start': start, 'end': end,
-                       'season': series_season}, useget=True)
+        r = await self.__req(URL_SESSION_TIMES, data={'start': start, 'end': end,
+                                                'season': series_season}, useget=True)
         return parse(r)
 
     @logged_in
-    def current_series_images(self):
+    async def current_series_images(self):
         """ Gets Current series images
         """
 
-        resp = self.__req(URL_CURRENT_SERIES, useget=True)
+        resp = await self.__req(URL_CURRENT_SERIES, useget=True)
 
         series_images = {}
         seriesobjs = re.findall(r'seriesobj=([^;]*);', resp)
@@ -495,11 +495,11 @@ class iRWebStats:
         return series_images
 
     @logged_in
-    def season_race_sessions(self, season, raceweek):
+    async def season_race_sessions(self, season, raceweek):
         """ Gets races sessions for season in specified raceweek """
 
-        r = self.__req(URL_SERIES_RACERESULTS, data={'seasonid': season,
-                       'raceweek': raceweek})  # TODO no bounds?
+        r = await self.__req(URL_SERIES_RACERESULTS, data={'seasonid': season,
+                                                     'raceweek': raceweek})  # TODO no bounds?
         res = parse(r)
         try:
             header = res['m']
@@ -511,11 +511,11 @@ class iRWebStats:
             return None
 
     @logged_in
-    def event_results(self, subsession, sessnum=0):
+    async def event_results(self, subsession, sessnum=0):
         """ Gets the event results (table of positions, times, etc.). The
             event is identified by a subsession id. """
 
-        r = self.__req(URL_GET_EVENTRESULTS % (subsession, sessnum)).encode('utf8').decode('utf-8')
+        r = await self.__req(URL_GET_EVENTRESULTS % (subsession, sessnum)).encode('utf8').decode('utf-8')
         data = [x for x in csv.reader(StringIO(r), delimiter=',', quotechar='"')]
         header_res = []
         for header in data[3]:
@@ -533,22 +533,24 @@ class iRWebStats:
         return event_info, results
 
     @logged_in
-    def event_results2(self, subsession, custid):
+    async def event_results2(self, subsession, custid):
         """ Get the event results from the web page rather than CSV.
         Required to get ttRating for time trials """
 
-        r = self.__req(URL_GET_EVENTRESULTS2 % (subsession, custid))
+        r = await self.__req(URL_GET_EVENTRESULTS2 % (subsession, custid))
 
-        resp = re.sub('\t+',' ',r)
-        resp = re.sub('\r\r\n+',' ',resp)
-        resp = re.sub('\s+',' ',resp)
+        resp = re.sub('\t+', ' ', r)
+        resp = re.sub('\r\r\n+', ' ', resp)
+        resp = re.sub('\s+', ' ', resp)
 
         str2find = "var resultOBJ ="
         ind1 = resp.index(str2find)
         ind2 = resp.index("};", ind1) + 1
         resp = resp[ind1 + len(str2find): ind2].replace('+', ' ')
 
-        ttitems = ("custid", "isOfficial", "carID", "avglaptime", "fastestlaptime", "fastestlaptimems", "fastestlapnum", "bestnlapstime", "bestnlapsnum", "lapscomplete", "incidents", "newttRating", "oldttRating", "sr_new", "sr_old", "reasonOutName")
+        ttitems = ("custid", "isOfficial", "carID", "avglaptime", "fastestlaptime", "fastestlaptimems", "fastestlapnum",
+                   "bestnlapstime", "bestnlapsnum", "lapscomplete", "incidents", "newttRating", "oldttRating", "sr_new",
+                   "sr_old", "reasonOutName")
         out = ""
         for ttitem in ttitems:
             ind1 = resp.index(ttitem)
@@ -567,31 +569,31 @@ class iRWebStats:
 
         return out
 
-    def subsession_results(self, subsession):
+    async def subsession_results(self, subsession):
         """ Get the results for a time trial event from the web page.
         """
 
-        r = self.__req(URL_GET_SUBSESSRESULTS % (subsession), useget=True)
+        r = await self.__req(URL_GET_SUBSESSRESULTS % (subsession), useget=True)
 
         out = parse(r)['rows']
 
         return out
 
-    def event_laps_single(self, subsession, custid, sessnum=0):
+    async def event_laps_single(self, subsession, custid, sessnum=0):
         """ Get the lap times for an event from the web page.
         """
 
-        r = self.__req(URL_GET_LAPS_SINGLE % (subsession, custid, sessnum))
+        r = await self.__req(URL_GET_LAPS_SINGLE % (subsession, custid, sessnum))
 
         out = parse(r)
 
         return out
 
-    def event_laps_all(self, subsession):
+    async def event_laps_all(self, subsession):
         """ Get the lap times for an event from the web page.
         """
 
-        r = self.__req(URL_GET_LAPS_ALL % subsession)
+        r = await self.__req(URL_GET_LAPS_ALL % subsession)
 
         out = parse(r)
 
@@ -605,18 +607,18 @@ class iRWebStats:
 
         return laptime
 
-    def world_record(self, seasonyear, seasonquarter, carid, trackid, custid):
+    async def world_record(self, seasonyear, seasonquarter, carid, trackid, custid):
         """ Get the world record lap time for certain car in a season.
         """
 
-        r = self.__req(URL_GET_WORLDRECORD % (seasonyear, seasonquarter, carid, trackid, custid))
+        r = await self.__req(URL_GET_WORLDRECORD % (seasonyear, seasonquarter, carid, trackid, custid))
         res = parse(r)
 
         header = res['m']
         try:
             results = res['d']['r'][1]
             newr = dict()
-            for k, v  in results.items():
+            for k, v in results.items():
                 newr[header[k]] = v
 
             if newr['race'].find("%3A") > -1:
@@ -628,6 +630,7 @@ class iRWebStats:
             record = None
 
         return record
+
 
 if __name__ == '__main__':
     irw = iRWebStats()
