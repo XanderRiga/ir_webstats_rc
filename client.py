@@ -199,7 +199,7 @@ class iRWebStats:
         return parse(r)
 
     @logged_in
-    def career_stats(self, custid=None):
+    async def career_stats(self, custid=None):
         """ Gets career stats (top5, top 10, etc.) of driver (custid)."""
         r = self.__req(URL_CAREER_STATS % (custid),
                        cookie=self.last_cookie)
@@ -210,7 +210,7 @@ class iRWebStats:
         return map(lambda x: CareerStats(x), career_stats_dict)
 
     @logged_in
-    def yearly_stats(self, custid=None):
+    async def yearly_stats(self, custid=None):
         """ Gets yearly stats (top5, top 10, etc.) of driver (custid)."""
         r = self.__req(URL_YEARLY_STATS % (custid),
                        cookie=self.last_cookie)
@@ -247,7 +247,7 @@ class iRWebStats:
         return parse(r)
 
     @logged_in
-    def lastrace_stats(self, custid=None):
+    async def lastrace_stats(self, custid=None):
         """ Gets stats of last races (10 max?) of driver (custid)."""
         r = self.__req(URL_LASTRACE_STATS % (custid),
                        cookie=self.last_cookie)
