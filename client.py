@@ -184,7 +184,7 @@ class iRWebStats:
         return o
 
     @logged_in
-    def iratingchart(self, custid=None, category=IRATING_ROAD_CHART):
+    async def iratingchart(self, custid=None, category=IRATING_ROAD_CHART):
         """ Gets the irating data of a driver using its custom id (custid)
             that generates the chart located in the driver's profile. """
 
