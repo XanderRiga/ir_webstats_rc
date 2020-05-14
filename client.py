@@ -85,8 +85,8 @@ class iRWebStats:
                 # TODO Should we cache this?
                 return self.logged
             self.custid = ''
-            r = self.__req(URL_IRACING_LOGIN, grab_cookie=True)
-            r = self.__req(URL_IRACING_LOGIN2, data,
+            r = await self.__req(URL_IRACING_LOGIN, grab_cookie=True)
+            r = await self.__req(URL_IRACING_LOGIN2, data,
                            cookie=self.last_cookie, grab_cookie=True)
 
             if 'irsso_members' in self.last_cookie:
