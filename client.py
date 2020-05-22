@@ -32,7 +32,9 @@ class iRWebStats:
         are required. Most  data is returned in JSON format and
         converted to python dicts. """
 
-    def __init__(self, verbose=True):
+    def __init__(self, username, password, verbose=True):
+        self.username = username
+        self.password = password
         self.last_cookie = ''
         self.logged = False
         self.custid = 0
@@ -40,7 +42,7 @@ class iRWebStats:
         self.TRACKS, self.CARS, self.DIVISION, self.CARCLASS, self.CLUB = {}, \
                                                                           {}, {}, {}, {}
 
-    def __save_cookie(self):
+    async def __save_cookie(self):
         """ Saves the current cookie to disk from a successful login to avoid
             future login procedures and save time. A cookie usually last
             at least a couple of hours """
@@ -51,8 +53,9 @@ class iRWebStats:
         o.write('\n' + str(self.custid))
         o.close()
 
-    def __load_cookie(self):
+    async def __load_cookie(self):
         """ Loads a previously saved cookie """
+        pprint('Attempting to load cookie')
         try:
             o = open('cookie.tmp', 'r')
             self.last_cookie, self.custid = o.read().split('\n')
@@ -61,7 +64,7 @@ class iRWebStats:
         except:
             return False
 
-    async def login(self, username='', password='', get_info=False):
+    async def login(self, get_info=False):
         """ Log in to iRacing members site. If there is a valid cookie saved
             then it tries to use it to avoid a new login request. Returns
             True is the login was succesful and stores the customer id
@@ -69,12 +72,12 @@ class iRWebStats:
 
         if self.logged:
             return True
-        data = {"username": username, "password": password, 'utcoffset': 300,
+        data = {"username": self.username, "password": self.password, 'utcoffset': 300,
                 'todaysdate': ''}
         try:
             pprint("Loggin in...", self.verbose)
             # Check if there's a previous cookie
-            if self.__load_cookie() and await self.__check_cookie():
+            if await self.__load_cookie() and await self.__check_cookie():
                 #  If previous cookie is valid
                 pprint("Previous cookie valid", self.verbose)
                 self.logged = True
@@ -96,11 +99,11 @@ class iRWebStats:
                 pprint(("CUSTID", self.custid), self.verbose)
                 self.logged = True
                 self.__get_irservice_info(r)
-                self.__save_cookie()
+                await self.__save_cookie()
                 pprint("Log in succesful", self.verbose)
             else:
                 pprint("Invalid Login (user: %s). Please check your\
-                        credentials" % (username), self.verbose)
+                        credentials" % (self.username), self.verbose)
                 self.logged = False
 
         except Exception as e:
@@ -132,6 +135,9 @@ class iRWebStats:
             h['Cookie'] = self.last_cookie
 
         if (data is None) or useget:
+            pprint('get request being sent')
+            pprint('url: ' + url)
+            pprint('headers: ' + str(h))
             resp = await requests.get(url, headers=h, params=data)
         else:
             h['Content-Type'] = 'application/x-www-form-urlencoded;\
@@ -184,13 +190,23 @@ class iRWebStats:
         return o
 
     @logged_in
-    async def iratingchart(self, custid=None, category=IRATING_ROAD_CHART):
+    async def iratingchart(self, custid=None, category=IRATING_ROAD_CHART, retry=True):
         """ Gets the irating data of a driver using its custom id (custid)
             that generates the chart located in the driver's profile. """
 
         r = await self.__req(URL_STATS_CHART % (custid, category),
                              cookie=self.last_cookie)
-        return parse(r)
+        parsed_iratings = parse(r)
+
+        if parsed_iratings == '' and retry:
+            print('trying to log in again')
+            self.logged = False
+            await self.login()
+            return await self.iratingchart(custid, category, False)
+        elif not parsed_iratings:
+            return []
+
+        return parsed_iratings
 
     @logged_in
     async def driver_counts(self):
@@ -199,23 +215,33 @@ class iRWebStats:
         return parse(r)
 
     @logged_in
-    async def career_stats(self, custid=None):
+    async def career_stats(self, custid=None, retry=True):
         """ Gets career stats (top5, top 10, etc.) of driver (custid)."""
         r = await self.__req(URL_CAREER_STATS % (custid),
                              cookie=self.last_cookie)
         career_stats_dict = parse(r)
-        if not career_stats_dict:
+        if career_stats_dict == '' and retry:
+            print('trying to login again')
+            self.logged = False
+            await self.login()
+            return await self.career_stats(custid, False)
+        elif not career_stats_dict:
             return []
 
         return map(lambda x: CareerStats(x), career_stats_dict)
 
     @logged_in
-    async def yearly_stats(self, custid=None):
+    async def yearly_stats(self, custid=None, retry=True):
         """ Gets yearly stats (top5, top 10, etc.) of driver (custid)."""
         r = await self.__req(URL_YEARLY_STATS % (custid),
                              cookie=self.last_cookie)
         yearly_stats_dict = parse(r)
-        if not yearly_stats_dict:
+        if yearly_stats_dict == '' and retry:
+            print('trying to log in again')
+            self.logged = False
+            await self.login()
+            return await self.yearly_stats(custid, False)
+        elif not yearly_stats_dict:
             return []
 
         return map(lambda x: YearlyStats(x), yearly_stats_dict)
@@ -247,13 +273,19 @@ class iRWebStats:
         return parse(r)
 
     @logged_in
-    async def lastrace_stats(self, custid=None):
+    async def lastrace_stats(self, custid=None, retry=True):
         """ Gets stats of last races (10 max?) of driver (custid)."""
         r = await self.__req(URL_LASTRACE_STATS % (custid),
                              cookie=self.last_cookie)
         lastrace_dict = parse(r)
         print('retrieved last races for ' + custid + ': ' + str(lastrace_dict))
-        if not lastrace_dict:
+
+        if lastrace_dict == '' and retry:
+            print('attempting to log in and try again')
+            self.logged = False
+            await self.login()
+            return await self.lastrace_stats(custid, False)
+        elif not lastrace_dict:
             return []
 
         return map(lambda x: LastRacesStats(x), lastrace_dict)
@@ -631,10 +663,3 @@ class iRWebStats:
             record = None
 
         return record
-
-
-if __name__ == '__main__':
-    irw = iRWebStats()
-    user, passw = ('username', 'password')
-    irw.login(user, passw)
-    print("Cars Driven", irw.cars_driven())  # example usage

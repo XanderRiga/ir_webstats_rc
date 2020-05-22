@@ -13,5 +13,5 @@ class CareerStats:
         self.lapsLed = dict['lapsLed']
         self.top5 = dict['top5']
         self.lapsLedPerc = round(dict['lapsLedPerc'], 2)
-        self.category = dict['category']
+        self.category = dict['category'].replace('+', ' ')
         self.starts = dict['starts']
