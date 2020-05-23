@@ -1,11 +1,5 @@
 from .car import Car
-
-name_mapping = {
-    'iRacing Street Stock Series - R': 'Street Stock - Rookie',
-    'DIRTcar Street Stock Series - Fixed': 'Dirt Street Stock - Fixed',
-    'Rookie iRacing Rallycross Series': 'Rallycross - Rookie',
-    'iRacing Advanced Legends Cup': 'Advanced Legends Cup'
-}
+from ..constants import series_short_name_mapping
 
 
 class Series:
@@ -19,7 +13,7 @@ class Series:
         return list(map(lambda x: x.name, self.cars))
 
     def short_name(self, name):
-        if name not in name_mapping:
+        if name not in series_short_name_mapping:
             return name
 
-        return name_mapping[name]
+        return series_short_name_mapping[name]

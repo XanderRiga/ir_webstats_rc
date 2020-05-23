@@ -64,6 +64,14 @@ INC_FLAGS = {
     2048: "tow"
 }
 
+series_short_name_mapping = {
+    'iRacing Street Stock Series - R': 'Street Stock - Rookie',
+    'DIRTcar Street Stock Series - Fixed': 'Dirt Street Stock - Fixed',
+    'Rookie iRacing Rallycross Series': 'Rallycross - Rookie',
+    'iRacing Advanced Legends Cup': 'Advanced Legends Cup',
+    'Advanced Mazda MX-5 Cup Series': 'Advanced Mazda MX-5 Cup',
+}
+
 # URLS
 URL_IRACING_LOGIN = 'https://members.iracing.com/membersite/login.jsp'
 URL_IRACING_LOGIN2 = 'https://members.iracing.com/membersite/Login'
