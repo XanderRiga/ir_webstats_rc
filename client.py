@@ -278,7 +278,6 @@ class iRWebStats:
         r = await self.__req(URL_LASTRACE_STATS % (custid),
                              cookie=self.last_cookie)
         lastrace_dict = parse(r)
-        print('retrieved last races for ' + custid + ': ' + str(lastrace_dict))
 
         if lastrace_dict == '' and retry:
             print('attempting to log in and try again')
