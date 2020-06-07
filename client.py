@@ -41,6 +41,7 @@ class iRWebStats:
         self.verbose = verbose
         self.TRACKS, self.CARS, self.DIVISION, self.CARCLASS, self.CLUB = {}, \
                                                                           {}, {}, {}, {}
+        self.last_request_at = None
 
     async def __save_cookie(self):
         """ Saves the current cookie to disk from a successful login to avoid
@@ -127,7 +128,12 @@ class iRWebStats:
         """ Creates and sends the HTTP requests to iRacing site """
 
         # Sleep/wait to avoid flooding the service with requests
-        time.sleep(WAIT_TIME)  # 0.3 seconds
+        if self.last_request_at:
+            print('Time difference: ' + str(time.perf_counter() - self.last_request_at))
+            while (time.perf_counter() - self.last_request_at) < WAIT_TIME:
+                pass
+
+        self.last_request_at = time.perf_counter()
         h = HEADERS.copy()
         if cookie is not None:  # Send the cookie
             h['Cookie'] = cookie

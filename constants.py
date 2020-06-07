@@ -2,7 +2,7 @@
 
 ALL = -1
 NUM_ENTRIES = 25  # Entries per page. This is the ammount set in iRacing site. We shouldn't increase it.
-WAIT_TIME = 0.3  # Minimum time in seconds between two consecutive requests to iRacing site (we don't want to flood/abuse the service). I'm not sure about the minimum value for this, I'll have to ask a dev.
+WAIT_TIME = 0.2  # Minimum time in seconds between two consecutive requests to iRacing site.
 
 IRATING_OVAL_CHART = 1
 IRATING_ROAD_CHART = 2
