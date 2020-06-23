@@ -15,7 +15,12 @@ import datetime
 import csv
 import time
 import re
-import ast
+import logging
+import sys
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S",
+                    format="%(asctime)s;%(levelname)s;%(message)s")
+log = logging.getLogger()
 
 from .util import *
 from .responses.series import Series
@@ -48,7 +53,7 @@ class iRWebStats:
             future login procedures and save time. A cookie usually last
             at least a couple of hours """
 
-        pprint("Saving cookie for future use", self.verbose)
+        log.info("Saving cookie for future use")
         o = open('cookie.tmp', 'w')
         o.write(self.last_cookie)
         o.write('\n' + str(self.custid))
@@ -56,7 +61,7 @@ class iRWebStats:
 
     async def __load_cookie(self):
         """ Loads a previously saved cookie """
-        pprint('Attempting to load cookie')
+        log.info('Attempting to load cookie')
         try:
             o = open('cookie.tmp', 'r')
             self.last_cookie, self.custid = o.read().split('\n')
@@ -76,11 +81,11 @@ class iRWebStats:
         data = {"username": self.username, "password": self.password, 'utcoffset': 300,
                 'todaysdate': ''}
         try:
-            pprint("Loggin in...", self.verbose)
+            log.info("Loggin in...")
             # Check if there's a previous cookie
             if await self.__load_cookie() and await self.__check_cookie():
                 #  If previous cookie is valid
-                pprint("Previous cookie valid", self.verbose)
+                log.info("Previous cookie valid")
                 self.logged = True
                 if get_info:
                     # Load iracing info
@@ -97,18 +102,17 @@ class iRWebStats:
                 ind = r.index('js_custid')
                 custid = int(r[ind + 11: r.index(';', ind)])
                 self.custid = custid
-                pprint(("CUSTID", self.custid), self.verbose)
+                log.info("CUSTID: " + str(self.custid))
                 self.logged = True
                 self.__get_irservice_info(r)
                 await self.__save_cookie()
-                pprint("Log in succesful", self.verbose)
+                log.info("Log in successful")
             else:
-                pprint("Invalid Login (user: %s). Please check your\
-                        credentials" % (self.username), self.verbose)
+                log.info("Invalid Login (user: %s). Please check your credentials" % self.username)
                 self.logged = False
 
         except Exception as e:
-            pprint(("Error on Login Request", e), self.verbose)
+            log.info("Error on Login Request " + str(e))
             self.logged = False
         return self.logged
 
@@ -129,7 +133,7 @@ class iRWebStats:
 
         # Sleep/wait to avoid flooding the service with requests
         if self.last_request_at:
-            print('Time difference: ' + str(time.perf_counter() - self.last_request_at))
+            log.info('Time difference: ' + str(time.perf_counter() - self.last_request_at))
             while (time.perf_counter() - self.last_request_at) < WAIT_TIME:
                 pass
 
@@ -141,9 +145,8 @@ class iRWebStats:
             h['Cookie'] = self.last_cookie
 
         if (data is None) or useget:
-            pprint('get request being sent')
-            pprint('url: ' + url)
-            pprint('headers: ' + str(h))
+            log.info('get request being sent')
+            log.info('url: ' + url)
             resp = await requests.get(url, headers=h, params=data)
         else:
             h['Content-Type'] = 'application/x-www-form-urlencoded;\
@@ -163,8 +166,7 @@ class iRWebStats:
             cars, series, etc. Check self.TRACKS, self.CARS, self.DIVISION
             , self.CARCLASS, self.CLUB. """
 
-        pprint("Getting iRacing Service info (cars, tracks, etc.)",
-               self.verbose)
+        log.info("Getting iRacing Service info (cars, tracks, etc.)")
         items = {"TRACKS": "TrackListing", "CARS": "CarListing",
                  "CARCLASS": "CarClassListing", "CLUBS": "ClubListing",
                  "SEASON": "SeasonListing", "DIVISION": "DivisionListing",
@@ -181,7 +183,7 @@ class iRWebStats:
                 setattr(self, i, o)  # i.e self.TRACKS = o
 
             except Exception as e:
-                pprint("Error ocurred. Couldn't get {}".format(i), self.verbose)
+                log.info("Error ocurred. Couldn't get {}".format(i))
 
     def _load_irservice_var(self, varname, resp, appear=1):
         str2find = "var " + varname + " = extractJSON('"
@@ -205,7 +207,7 @@ class iRWebStats:
         parsed_iratings = parse(r)
 
         if parsed_iratings == '' and retry:
-            print('trying to log in again')
+            log.info('trying to log in again')
             self.logged = False
             await self.login()
             return await self.iratingchart(custid, category, False)
@@ -227,7 +229,7 @@ class iRWebStats:
                              cookie=self.last_cookie)
         career_stats_dict = parse(r)
         if career_stats_dict == '' and retry:
-            print('trying to login again')
+            log.info('trying to login again')
             self.logged = False
             await self.login()
             return await self.career_stats(custid, False)
@@ -243,7 +245,7 @@ class iRWebStats:
                              cookie=self.last_cookie)
         yearly_stats_dict = parse(r)
         if yearly_stats_dict == '' and retry:
-            print('trying to log in again')
+            log.info('trying to log in again')
             self.logged = False
             await self.login()
             return await self.yearly_stats(custid, False)
@@ -286,7 +288,7 @@ class iRWebStats:
         lastrace_dict = parse(r)
 
         if lastrace_dict == '' and retry:
-            print('attempting to log in and try again')
+            log.info('attempting to log in and try again')
             self.logged = False
             await self.login()
             return await self.lastrace_stats(custid, False)
@@ -349,8 +351,7 @@ class iRWebStats:
             drivers = format_results(drivers, header)
 
         except Exception as e:
-            pprint(("Error fetching driver search data. Error:", e),
-                   self.verbose)
+            log.info("Error fetching driver search data. Error: " + str(e))
 
         return drivers, total_results
 
@@ -440,7 +441,7 @@ class iRWebStats:
     @logged_in
     async def all_seasons(self):
         """ Get All season data available at Series Stats page"""
-        pprint("Getting iRacing Seasons with Stats")
+        log.info("Getting iRacing Seasons with Stats")
         resp = await self.__req(URL_SEASON_STANDINGS2)
         seasons_dict_list = self._load_irservice_var("SeasonListing", resp)
         if not seasons_dict_list:
@@ -545,7 +546,7 @@ class iRWebStats:
             results = format_results(results, header)
             return results
         except TypeError:
-            print(res)
+            log.info(res)
             return None
 
     @logged_in
