@@ -48,7 +48,7 @@ class iRWebStats:
             future login procedures and save time. A cookie usually last
             at least a couple of hours """
 
-        log.info("Saving cookie for future use")
+        self.log.info("Saving cookie for future use")
         o = open('cookie.tmp', 'w')
         o.write(self.last_cookie)
         o.write('\n' + str(self.custid))
